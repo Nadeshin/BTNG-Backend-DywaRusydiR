@@ -314,13 +314,14 @@ Deploy menggunakan **Clever Cloud** + database MySQL eksternal.
    | Variable | Nilai |
    |---|---|
    | `CC_PHP_VERSION` | `8.3` |
+   | `CC_WEBROOT` | `/public` |
    | `CC_POST_BUILD_HOOK` | `./.clever.cloud/post-build.sh` |
    | `CC_PRE_RUN_HOOK` | `./.clever.cloud/pre-run.sh` |
 
    - `post-build.sh` → `composer install` produksi + cache config/view.
    - `pre-run.sh` → `php artisan migrate --force` + `php artisan db:seed --force` setiap aplikasi start, jadi database otomatis terisi 10 data dummy.
 
-6. Pastikan `webroot` mengarah ke `/public` (sudah diatur di `.clever.cloud/php.json`).
+6. `webroot` **wajib** diarahkan ke `/public` lewat `CC_WEBROOT=/public` (`.clever.cloud/php.json` ikut disertakan sebagai cadangan).
 
 ---
 
