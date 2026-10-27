@@ -20,11 +20,19 @@ RUN a2ensite 000-default
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_NO_INTERACTION=1 \
+    COMPOSER_MAX_PARALLEL_HTTP=6
+
 WORKDIR /var/www/html
+
+# Diagnostik singkat (muncul di build log)
+RUN php -v && php -m | sort | tr '\n' ' '
 
 # Dependency dulu (layer cache tetap kepakai walau source berubah)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-progress --no-interaction \
+ || composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-progress --no-interaction -vvv
 
 COPY . .
 
