@@ -1,0 +1,414 @@
+{
+  "info": {
+    "_postman_id": "b7c1e4a2-5d3f-4a91-9c2e-8f6d1a0b7c34",
+    "name": "BTNG Backend - Showroom Mobil",
+    "description": "Koleksi pengujian REST API Showroom Mobil (Tugas Akhir BTNG Kelas Backend).\n\nUbah variabel `baseUrl` sesuai target:\n- Lokal: http://127.0.0.1:8000\n- Live: https://nama-app.cleverapps.io\n\nJalankan berurutan (Collection Runner) karena request Create menyimpan `mobil_id` yang dipakai request Detail, Update, dan Delete.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "mobil_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. List Mobil (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Amplop message + data', () => {",
+              "  pm.expect(body).to.have.property('message');",
+              "  pm.expect(body.data).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Metadata pagination tersedia', () => {",
+              "  pm.expect(body.meta).to.have.property('total');",
+              "  pm.expect(body.meta).to.have.property('per_page');",
+              "});",
+              "",
+              "pm.test('Atribut mobil lengkap', () => {",
+              "  if (body.data.length === 0) { return; }",
+              "  const mobil = body.data[0];",
+              "  ['id', 'nama', 'brand', 'harga', 'tahun', 'transmisi', 'bahan_bakar', 'status', 'foto']",
+              "    .forEach((key) => pm.expect(mobil).to.have.property(key));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil?per_page=5",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil"],
+          "query": [
+            {
+              "key": "per_page",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. List Mobil - Search & Filter",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Semua hasil sesuai filter brand=Toyota', () => {",
+              "  body.data.forEach((mobil) => pm.expect(mobil.brand).to.eql('Toyota'));",
+              "});",
+              "",
+              "pm.test('Semua hasil sesuai filter status=tersedia', () => {",
+              "  body.data.forEach((mobil) => pm.expect(mobil.status).to.eql('tersedia'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil?brand=Toyota&status=tersedia",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil"],
+          "query": [
+            {
+              "key": "brand",
+              "value": "Toyota"
+            },
+            {
+              "key": "status",
+              "value": "tersedia"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Create Mobil (201)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Pesan sukses sesuai', () => {",
+              "  pm.expect(body.message).to.eql('Data mobil berhasil ditambahkan');",
+              "});",
+              "",
+              "pm.test('Data yang dikirim tersimpan benar', () => {",
+              "  pm.expect(body.data.nama).to.include('Test Drive Unit');",
+              "  pm.expect(body.data.brand).to.eql('Honda');",
+              "  pm.expect(body.data.harga).to.eql(250000000);",
+              "  pm.expect(body.data.tahun).to.eql(2025);",
+              "  pm.expect(body.data.transmisi).to.eql('CVT');",
+              "  pm.expect(body.data.bahan_bakar).to.eql('Bensin');",
+              "  pm.expect(body.data.status).to.eql('tersedia');",
+              "});",
+              "",
+              "pm.test('ID dikembalikan untuk request berikutnya', () => {",
+              "  pm.expect(body.data.id).to.be.a('number');",
+              "});",
+              "",
+              "pm.collectionVariables.set('mobil_id', body.data.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nama\": \"Test Drive Unit {{$timestamp}}\",\n  \"brand\": \"Honda\",\n  \"harga\": 250000000,\n  \"tahun\": 2025,\n  \"transmisi\": \"CVT\",\n  \"bahan_bakar\": \"Bensin\",\n  \"status\": \"tersedia\",\n  \"foto\": \"https://images.unsplash.com/photo-1552519507-da3b142c6e3d\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil"]
+        }
+      }
+    },
+    {
+      "name": "4. Detail Mobil (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Data yang diminta sesuai dengan ID', () => {",
+              "  pm.expect(String(body.data.id)).to.eql(pm.collectionVariables.get('mobil_id'));",
+              "});",
+              "",
+              "pm.test('Pesan sukses sesuai', () => {",
+              "  pm.expect(body.message).to.eql('Detail mobil berhasil diambil');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil/{{mobil_id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil", "{{mobil_id}}"]
+        }
+      }
+    },
+    {
+      "name": "5. Update Mobil (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Perubahan tersimpan', () => {",
+              "  pm.expect(body.data.status).to.eql('sold');",
+              "  pm.expect(body.data.harga).to.eql(240000000);",
+              "});",
+              "",
+              "pm.test('Pesan sukses sesuai', () => {",
+              "  pm.expect(body.message).to.eql('Data mobil berhasil diperbarui');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"sold\",\n  \"harga\": 240000000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil/{{mobil_id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil", "{{mobil_id}}"]
+        }
+      }
+    },
+    {
+      "name": "6. Validasi Gagal (422)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Amplop pesan error tersedia', () => {",
+              "  pm.expect(body).to.have.property('message');",
+              "  pm.expect(body.errors).to.be.an('object');",
+              "});",
+              "",
+              "pm.test('Error per kolom dilaporkan', () => {",
+              "  pm.expect(body.errors).to.have.property('nama');",
+              "  pm.expect(body.errors).to.have.property('harga');",
+              "  pm.expect(body.errors.nama[0]).to.eql('Kolom nama mobil wajib diisi.');",
+              "  pm.expect(body.errors.harga[0]).to.eql('Kolom harga harus berupa angka.');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nama\": \"\",\n  \"brand\": \"Toyota\",\n  \"harga\": \"mahal\",\n  \"tahun\": 2025,\n  \"transmisi\": \"Automatic\",\n  \"bahan_bakar\": \"Bensin\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil"]
+        }
+      }
+    },
+    {
+      "name": "7. Data Tidak Ditemukan (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Amplop 404 konsisten', () => {",
+              "  pm.expect(body.message).to.eql('Data tidak ditemukan');",
+              "  pm.expect(body.data).to.be.null;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil/999999",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil", "999999"]
+        }
+      }
+    },
+    {
+      "name": "8. Delete Mobil (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Pesan sukses sesuai', () => {",
+              "  pm.expect(body.message).to.eql('Data mobil berhasil dihapus');",
+              "});",
+              "",
+              "pm.test('Data sudah tidak bisa diambil lagi', () => {",
+              "  pm.sendRequest(",
+              "    {",
+              "      url: pm.collectionVariables.get('baseUrl') + '/api/mobil/' + pm.collectionVariables.get('mobil_id'),",
+              "      method: 'GET',",
+              "      header: { Accept: 'application/json' }",
+              "    },",
+              "    (err, res) => {",
+              "      pm.expect(err).to.be.null;",
+              "      pm.expect(res.code).to.eql(404);",
+              "    }",
+              "  );",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/mobil/{{mobil_id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mobil", "{{mobil_id}}"]
+        }
+      }
+    }
+  ]
+}
