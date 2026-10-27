@@ -2,10 +2,10 @@
 
 RESTful API untuk manajemen data showroom mobil, dibangun dengan **Laravel 12** dan **MySQL** sebagai Tugas Akhir BTNG Kelas Backend.
 
-- **Live API** : `https://[domain-railway]/api/mobil`
-- **Dokumentasi interaktif** : `https://[domain-railway]/docs/api`
+- **Live API** : <https://app-4b0ebed8-d424-4dd4-86b3-a7310555fc1d.cleverapps.io/api/mobil>
+- **Dokumentasi interaktif** : <https://app-4b0ebed8-d424-4dd4-86b3-a7310555fc1d.cleverapps.io/docs/api>
 
-> Ganti `[domain-railway]` dengan domain dari Railway setelah deploy.
+> Deploy live di **Clever Cloud** (PHP 8.3 + MySQL eksternal), di-deploy lewat `clever deploy`.
 
 ---
 
@@ -35,7 +35,7 @@ RESTful API untuk manajemen data showroom mobil, dibangun dengan **Laravel 12** 
 - ✅ HTTP status code semantik: `200`, `201`, `404`, `422`, `500`
 - ✅ Dokumentasi interaktif Scramble di `/docs/api` (bisa **Try it out**)
 - ✅ Seeder 10 data dummy (`php artisan db:seed`)
-- ✅ Deployment live (Docker di Railway) + database MySQL eksternal
+- ✅ Deployment live di Clever Cloud + database MySQL eksternal
 
 **Tambahan (bonus)**
 
@@ -52,11 +52,11 @@ RESTful API untuk manajemen data showroom mobil, dibangun dengan **Laravel 12** 
 
 | Komponen | Versi |
 |---|---|
-| PHP | 8.2+ |
+| PHP | 8.3 |
 | Laravel | 12.x |
 | Database | MySQL 8 |
 | Dokumentasi | dedoc/scramble |
-| Deployment | Railway (Docker) / Clever Cloud |
+| Deployment | Clever Cloud (live) / Docker (Railway, alternatif) |
 
 ---
 
@@ -292,10 +292,42 @@ postman collection run postman/BTNG-Backend-Showroom-Mobil.postman_collection.js
 
 ## Deployment
 
-Deploy utama memakai **Railway** (Docker) + database MySQL eksternal.
-Konfigurasi **Clever Cloud** tetap disertakan sebagai alternatif.
+Deploy live memakai **Clever Cloud** (PHP 8.3) + database MySQL eksternal.
+Konfigurasi **Railway** (Docker) tetap disertakan sebagai alternatif.
 
-### A. Railway (utama)
+### A. Clever Cloud (dipakai untuk live)
+
+Deploy dilakukan dengan **Clever CLI**, tanpa integrasi GitHub:
+
+```bash
+clever login
+clever link <APP_ID>
+clever deploy
+```
+
+Environment variable yang wajib diisi di console Clever Cloud:
+
+| Variable | Nilai |
+|---|---|
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_KEY` | hasil `php artisan key:generate --show` |
+| `APP_URL` | `https://[nama-app].cleverapps.io` |
+| `APP_TIMEZONE` | `Asia/Jakarta` |
+| `LOG_CHANNEL` | `stderr` |
+| `DB_CONNECTION` | `mysql` |
+| `DB_HOST` / `DB_PORT` | host & port database |
+| `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | kredensial database |
+| `CC_PHP_VERSION` | `8.3` |
+| `CC_WEBROOT` | `/public` |
+| `CC_POST_BUILD_HOOK` | `./.clever.cloud/post-build.sh` |
+| `CC_PRE_RUN_HOOK` | `./.clever.cloud/pre-run.sh` |
+
+- `post-build.sh` → `composer install` produksi + cache config/view.
+- `pre-run.sh` → `php artisan migrate --force` + `php artisan db:seed --force` setiap aplikasi start, jadi database otomatis terisi 10 data dummy.
+- `composer.json` mengunci `config.platform.php` ke **8.3.0** supaya lock file selalu kompatibel dengan runtime Clever Cloud.
+
+### B. Railway (alternatif)
 
 Proyek sudah menyertakan `Dockerfile` (PHP 8.3 + Apache, document root `/public`) dan `docker/entrypoint.sh` yang otomatis menjalankan `migrate` + `db:seed` setiap container start.
 
@@ -319,26 +351,6 @@ Proyek sudah menyertakan `Dockerfile` (PHP 8.3 + Apache, document root `/public`
 
 5. **Deploy** ulang (Redeploy) setelah variabel terisi.
 6. Verifikasi: `https://[domain-railway]/api/mobil` dan `https://[domain-railway]/docs/api`.
-
-### B. Clever Cloud (alternatif)
-
-1. Buat aplikasi **PHP** dan hubungkan ke repository GitHub.
-2. Tambahkan add-on MySQL (atau database eksternal).
-3. Set environment variable:
-
-   | Variable | Nilai |
-   |---|---|
-   | `APP_ENV` | `production` |
-   | `APP_DEBUG` | `false` |
-   | `APP_KEY` | hasil `php artisan key:generate --show` |
-   | `APP_URL` | `https://[nama-app].cleverapps.io` |
-   | `DB_CONNECTION` | `mysql` |
-   | `DB_HOST` / `DB_PORT` | host & port database |
-   | `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | kredensial database |
-   | `CC_PHP_VERSION` | `8.3` |
-   | `CC_WEBROOT` | `/public` |
-   | `CC_POST_BUILD_HOOK` | `./.clever.cloud/post-build.sh` |
-   | `CC_PRE_RUN_HOOK` | `./.clever.cloud/pre-run.sh` |
 
 ---
 

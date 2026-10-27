@@ -21,3 +21,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Clever Cloud CLI (link lokal)
+.clever.json
