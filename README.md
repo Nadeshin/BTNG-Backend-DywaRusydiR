@@ -2,10 +2,10 @@
 
 RESTful API untuk manajemen data showroom mobil, dibangun dengan **Laravel 12** dan **MySQL** sebagai Tugas Akhir BTNG Kelas Backend.
 
-- **Live API** : `https://[nama-app].cleverapps.io/api/mobil`
-- **Dokumentasi interaktif** : `https://[nama-app].cleverapps.io/docs/api`
+- **Live API** : `https://[domain-railway]/api/mobil`
+- **Dokumentasi interaktif** : `https://[domain-railway]/docs/api`
 
-> Ganti `[nama-app]` dengan nama aplikasi Clever Cloud kamu setelah deploy.
+> Ganti `[domain-railway]` dengan domain dari Railway setelah deploy.
 
 ---
 
@@ -35,7 +35,7 @@ RESTful API untuk manajemen data showroom mobil, dibangun dengan **Laravel 12** 
 - ✅ HTTP status code semantik: `200`, `201`, `404`, `422`, `500`
 - ✅ Dokumentasi interaktif Scramble di `/docs/api` (bisa **Try it out**)
 - ✅ Seeder 10 data dummy (`php artisan db:seed`)
-- ✅ Deployment live di Clever Cloud + database eksternal
+- ✅ Deployment live (Docker di Railway) + database MySQL eksternal
 
 **Tambahan (bonus)**
 
@@ -56,7 +56,7 @@ RESTful API untuk manajemen data showroom mobil, dibangun dengan **Laravel 12** 
 | Laravel | 12.x |
 | Database | MySQL 8 |
 | Dokumentasi | dedoc/scramble |
-| Deployment | Clever Cloud |
+| Deployment | Railway (Docker) / Clever Cloud |
 
 ---
 
@@ -292,12 +292,39 @@ postman collection run postman/BTNG-Backend-Showroom-Mobil.postman_collection.js
 
 ## Deployment
 
-Deploy menggunakan **Clever Cloud** + database MySQL eksternal.
+Deploy utama memakai **Railway** (Docker) + database MySQL eksternal.
+Konfigurasi **Clever Cloud** tetap disertakan sebagai alternatif.
+
+### A. Railway (utama)
+
+Proyek sudah menyertakan `Dockerfile` (PHP 8.3 + Apache, document root `/public`) dan `docker/entrypoint.sh` yang otomatis menjalankan `migrate` + `db:seed` setiap container start.
 
 1. Push proyek ke GitHub (repository **Public**).
-2. Buat aplikasi **PHP** di Clever Cloud, hubungkan ke repository GitHub.
-3. Tambahkan **add-on MySQL** (atau database eksternal) lalu salin kredensialnya.
-4. Set environment variable di Clever Cloud:
+2. Buka [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo** → pilih repository ini.
+   Railway otomatis mendeteksi `Dockerfile`.
+3. **Settings → Networking → Generate Domain** untuk mendapat URL publik.
+4. Isi **Variables**:
+
+   | Variable | Nilai |
+   |---|---|
+   | `APP_ENV` | `production` |
+   | `APP_DEBUG` | `false` |
+   | `APP_KEY` | hasil `php artisan key:generate --show` |
+   | `APP_URL` | `https://[domain-railway]` |
+   | `APP_TIMEZONE` | `Asia/Jakarta` |
+   | `LOG_CHANNEL` | `stderr` |
+   | `DB_CONNECTION` | `mysql` |
+   | `DB_HOST` / `DB_PORT` | host & port database |
+   | `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | kredensial database |
+
+5. **Deploy** ulang (Redeploy) setelah variabel terisi.
+6. Verifikasi: `https://[domain-railway]/api/mobil` dan `https://[domain-railway]/docs/api`.
+
+### B. Clever Cloud (alternatif)
+
+1. Buat aplikasi **PHP** dan hubungkan ke repository GitHub.
+2. Tambahkan add-on MySQL (atau database eksternal).
+3. Set environment variable:
 
    | Variable | Nilai |
    |---|---|
@@ -308,20 +335,10 @@ Deploy menggunakan **Clever Cloud** + database MySQL eksternal.
    | `DB_CONNECTION` | `mysql` |
    | `DB_HOST` / `DB_PORT` | host & port database |
    | `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | kredensial database |
-
-5. Set **hooks** di Clever Cloud (Environment variables):
-
-   | Variable | Nilai |
-   |---|---|
    | `CC_PHP_VERSION` | `8.3` |
    | `CC_WEBROOT` | `/public` |
    | `CC_POST_BUILD_HOOK` | `./.clever.cloud/post-build.sh` |
    | `CC_PRE_RUN_HOOK` | `./.clever.cloud/pre-run.sh` |
-
-   - `post-build.sh` → `composer install` produksi + cache config/view.
-   - `pre-run.sh` → `php artisan migrate --force` + `php artisan db:seed --force` setiap aplikasi start, jadi database otomatis terisi 10 data dummy.
-
-6. `webroot` **wajib** diarahkan ke `/public` lewat `CC_WEBROOT=/public` (`.clever.cloud/php.json` ikut disertakan sebagai cadangan).
 
 ---
 
